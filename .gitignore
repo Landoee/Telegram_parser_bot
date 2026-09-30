@@ -1,0 +1,23 @@
+# Виртуальное окружение
+.venv/
+env/
+venv/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Переменные окружения и секреты (НИКОГДА не коммить их!)
+.env
+*.json
+credentials.json
+token.json
+
+# IDE
+.vscode/
+.idea/
+
+# Playwright
+browsers.json
