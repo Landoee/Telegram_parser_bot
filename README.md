@@ -1,40 +1,71 @@
-# Telegram_parser_bot
-# 🤖 Telegram Bot Web-Parser-bot
+```markdown
+# SFU Schedule Telegram Bot
 
-> Телеграм-бот для парсинга базовых данных с сайта введенного пользователем.
-
----
-
-## 🛠 Технологический стек
-
-* **Python** — основной язык разработки
-* **uv** — менеджер пакетов и виртуального окружения
-* **Aiogram 3** — фреймворк для создания асинхронного Telegram-бота
-* **Playwright & BeautifulSoup** — парсинг динамических и статических веб-страниц
-* **Requests** — выполнение легких HTTP-запросов
-* **gspread** — интеграция и работа с Google Таблицами
+Telegram bot designed for students of Siberian Federal University (SFU) to retrieve and navigate class schedules. The application parses schedule data, maintains user context via finite state machine (FSM), and provides interactive daily navigation.
 
 ---
 
-## 📋 Бриф и задачи проекта
+## Technical Stack
 
-- [ ] **Этап 1: Архитектура и Базовый каркас**
-  - [x] Инициализация проекта через `uv`
-  - [x] Настройка конфигурации и переменных окружения (`.env`)
-  - [ ] Создание базового роутера aiogram (команды `/start`, `/help`)
-- [ ] **Этап 2: Интеграция с сервисами**
-  - [ ] Подключение Google Таблиц (`gspread`)
-  - [ ] Настройка логики парсинга (`Playwright` / `bs4`)
-- [ ] **Этап 3: Бизнес-логика бота**
-  - [ ] Обработка пользовательских запросов / инлайн-кнопок
-  - [ ] Связка «Парсер -> Google Таблицы -> Ответ пользователю»
-- [ ] **Этап 4: Финальное тестирование и деплой**
+* **Language:** Python 3.13
+* **Bot Framework:** aiogram 3
+* **Parsing:** requests, BeautifulSoup4 (bs4)
+* **Package Management:** uv
+* **Logging:** loguru
+* **Configuration:** python-dotenv
 
 ---
 
-## 🚀 Быстрый старт (Локальный запуск)
+## Project Structure
 
-1. **Клонируй репозиторий:**
-   ```bash
-   git clone [https://github.com/твой_логин/my_telegram_bot.git](https://github.com/твой_логин/my_telegram_bot.git)
-   cd my_telegram_bot
+```text
+├── logs/
+│   └── bot.log
+├── src/
+│   ├── handlers/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   └── schedule.py
+│   ├── services/
+│   │   └── parser.py
+│   ├── config.py
+│   └── main.py
+├── .env
+├── requirements.txt
+└── README.md
+
+```
+
+---
+
+## Core Features
+
+* **Sequential Input (FSM):** Guides the user through a multi-step input process to capture their institute and academic group.
+* **Schedule Parsing:** Fetches raw HTML data from the SFU schedule portal and extracts lesson details using BeautifulSoup.
+* **Interactive Navigation:** Generates inline keyboards with days of the week, allowing users to switch days dynamically without flooding the chat history.
+* **Context Preservation:** Stores active institute and group states per user session.
+
+---
+
+## Installation and Setup
+
+1. Clone the repository and navigate to the project directory.
+2. Initialize and install dependencies using `uv`:
+```bash
+uv sync
+
+```
+
+
+3. Create a `.env` file in the root directory and add your Telegram bot token:
+```env
+BOT_TOKEN=your_telegram_bot_token_here
+
+```
+
+
+4. Run the application:
+```bash
+uv run src/main.py
+
+```
