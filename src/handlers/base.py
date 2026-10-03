@@ -12,5 +12,6 @@ async def cmd_start(message: Message):
     logger.info(f"Пользователь {message.from_user.id} вызвал /start")
     await message.answer(
         f"Привет, {message.from_user.first_name}! 👋\n"
-        "Я твой бот на aiogram с настроенной архитектурой. Всё работает как часы!"
+        "Я бот расписание сфу, и мне нужно чтобы ты прошел маленькую регистрацию.\n"
+        "Для этого нажми сюда -> /registration"
     )

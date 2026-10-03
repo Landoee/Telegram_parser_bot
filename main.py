@@ -2,7 +2,7 @@ from src.config import BOT_TOKEN
 from src.handlers import router as main_router
 
 from src.db.init_db import init_db
-from src.db.models import User
+from src.db.models import Students
 from src.db.base import engine
 
 import asyncio

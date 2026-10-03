@@ -1,0 +1,13 @@
+
+
+def get_institut():
+    ...
+
+def get_group():
+    ...
+
+def get_course():
+    ...
+
+def get_subgroup():
+    ...
