@@ -15,14 +15,37 @@ from src.db.requests import save_student
 
 router = Router() 
 
+async def _show_registration_prompt(
+    message: Message,
+    state: FSMContext,
+    *,
+    edit_message: bool = False,
+) -> None:
+    await state.clear()
+    text = "📚 Давай настроим расписание!\n\nШаг 1 из 4: Выбери свой институт:"
+    if edit_message:
+        await message.edit_text(text, reply_markup=get_institutes_keyboard())
+    else:
+        await message.answer(text, reply_markup=get_institutes_keyboard())
+
+
 # Шаг 1: Старт регистрации (Команда /registration)
 @router.message(Command("registration"))
 async def registration_start(message: Message, state: FSMContext):
-    await state.clear() # На всякий случай очищаем старый кэш при новом старте
-    await message.answer(
-        "📚 Давай настроим расписание!\n\nШаг 1 из 4: Выбери свой институт:",
-        reply_markup=get_institutes_keyboard()
-    )
+    await _show_registration_prompt(message, state)
+
+
+@router.callback_query(F.data == "settings:change_data")
+async def change_data(callback: CallbackQuery, state: FSMContext):
+    if not isinstance(callback.message, Message):
+        await callback.answer(
+            "Не удалось начать изменение данных. Отправь команду /registration.",
+            show_alert=True,
+        )
+        return
+
+    await _show_registration_prompt(callback.message, state, edit_message=True)
+    await callback.answer()
 
 # Шаг 2: Обработка выбора института -> Переход к выбору курса
 @router.callback_query(F.data.startswith("inst:"))
