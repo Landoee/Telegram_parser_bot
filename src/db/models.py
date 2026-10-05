@@ -9,11 +9,11 @@ class Students(Base):
     telegram_id: Mapped[int] = mapped_column(
         BigInteger, primary_key=True, unique=True, index=True
     )
-    group_name: Mapped[str] = mapped_column(String(50), nullable=True)
-
+    username: Mapped[str | None] = mapped_column(String(64), nullable=True)
     uni_name: Mapped[str] = mapped_column(String(20), nullable=False)
-
-    subgroup_number: Mapped[int | None] = mapped_column(Integer,nullable=True)
+    course: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    group_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    subgroup_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     def __repr__(self) -> str:
         return f"<User telegram_id={self.telegram_id} group={self.group_name}>"

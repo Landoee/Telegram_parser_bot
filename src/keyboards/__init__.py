@@ -1,0 +1,1 @@
+from src.keyboards.inline import get_institutes_keyboard, get_courses_keyboard, get_subgroup_keyboard, get_main_menu_keyboard
