@@ -1,71 +1,54 @@
-```markdown
-# SFU Schedule Telegram Bot
+# Расписание СФУ — Telegram-бот
 
-Telegram bot designed for students of Siberian Federal University (SFU) to retrieve and navigate class schedules. The application parses schedule data, maintains user context via finite state machine (FSM), and provides interactive daily navigation.
+Python 3.13, aiogram 3, PostgreSQL, SQLAlchemy, requests, BeautifulSoup.
+Источник: https://edu.sfu-kras.ru/timetable.
 
----
+## Запуск
 
-## Technical Stack
+Установите зависимости через `uv sync`. В `.env` задайте:
 
-* **Language:** Python 3.13
-* **Bot Framework:** aiogram 3
-* **Parsing:** requests, BeautifulSoup4 (bs4)
-* **Package Management:** uv
-* **Logging:** loguru
-* **Configuration:** python-dotenv
-
----
-
-## Project Structure
-
-```text
-├── logs/
-│   └── bot.log
-├── src/
-│   ├── handlers/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   └── schedule.py
-│   ├── services/
-│   │   └── parser.py
-│   ├── config.py
-│   └── main.py
-├── .env
-├── requirements.txt
-└── README.md
-
+```dotenv
+BOT_TOKEN=токен_бота
+DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/sfu
 ```
 
----
+PostgreSQL должен быть запущен; таблицы создаются при старте.
 
-## Core Features
-
-* **Sequential Input (FSM):** Guides the user through a multi-step input process to capture their institute and academic group.
-* **Schedule Parsing:** Fetches raw HTML data from the SFU schedule portal and extracts lesson details using BeautifulSoup.
-* **Interactive Navigation:** Generates inline keyboards with days of the week, allowing users to switch days dynamically without flooding the chat history.
-* **Context Preservation:** Stores active institute and group states per user session.
-
----
-
-## Installation and Setup
-
-1. Clone the repository and navigate to the project directory.
-2. Initialize and install dependencies using `uv`:
-```bash
-uv sync
-
+```sh
+uv run main.py
 ```
 
+В боте: `/registration` → институт → курс → полное название группы
+(например, `КИ26-01`) → подгруппа → «На сегодня».
+Если у группы нет подгрупп на сайте, можно выбрать 1: будет общее расписание.
+Короткий номер `01` работает только при однозначном совпадении в институте и курсе.
+Полное название должно соответствовать каталогу сайта, включая дополнительные пометки, если они есть.
 
-3. Create a `.env` file in the root directory and add your Telegram bot token:
-```env
-BOT_TOKEN=your_telegram_bot_token_here
+Кнопки «Расписание», «На сегодня», «На завтра», «На неделю» и команда
+`/schedule` подключены. Неделя — текущая, с понедельника по воскресенье.
+Дата и время определяются по Красноярску. Длинное расписание делится на сообщения.
 
+## Проверка парсера без Telegram и базы данных
+
+```sh
+.venv/bin/python -m src.services.parser 'КИ26-01' --institute IKIT --course 1 --subgroup 1
+.venv/bin/python -m src.services.parser 'КИ26-01' --date 2026-10-08
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
+Каталог определяет точное название группы и подгруппы. Парсер учитывает чётность
+с сайта, переход между неделями и объединённые ячейки для обеих недель.
+Явные пометки `только ДД.ММ.ГГГГ` фильтруются по дате. Остальные свободные
+текстовые ограничения (диапазоны, исключения и т. п.) сохраняются в тексте занятия
+и пока не интерпретируются автоматически. Источник — регулярная HTML-таблица;
+экзамены и отдельные документы других разделов не разбираются.
 
-4. Run the application:
-```bash
-uv run src/main.py
+HTTP-запросы выполняются вне цикла aiogram с таймаутами. При ошибке сертификатов
+requests используется установленный системный `curl` с включённой проверкой TLS.
+Если его нет, нужно настроить доверенные сертификаты Python
+(например, `REQUESTS_CA_BUNDLE`). Ошибки источника не выдаются за отсутствие пар.
 
-```
+Реальная таблица КИ26-01, подгруппа 1, полученная 08.10.2026, сохранена в
+[тестовом примере](tests/fixtures/ki26_01.html). Тесты не обращаются к Telegram,
+PostgreSQL или сайту. Проверяют парсер, выбор группы, даты, длинные сообщения
+и обработчик кнопки «На сегодня».

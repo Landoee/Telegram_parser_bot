@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.filters import Command
 
@@ -13,6 +14,13 @@ from src.keyboards.inline import (
 )
 from src.db.requests import save_student
 
+class Registration(StatesGroup):
+    institute = State()
+    course = State()
+    group = State()
+    subgroup = State()
+
+
 router = Router() 
 
 async def _show_registration_prompt(
@@ -22,6 +30,7 @@ async def _show_registration_prompt(
     edit_message: bool = False,
 ) -> None:
     await state.clear()
+    await state.set_state(Registration.institute)
     text = "📚 Давай настроим расписание!\n\nШаг 1 из 4: Выбери свой институт:"
     if edit_message:
         await message.edit_text(text, reply_markup=get_institutes_keyboard())
@@ -48,12 +57,13 @@ async def change_data(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 # Шаг 2: Обработка выбора института -> Переход к выбору курса
-@router.callback_query(F.data.startswith("inst:"))
+@router.callback_query(Registration.institute, F.data.startswith("inst:"))
 async def process_institute(callback: CallbackQuery, state: FSMContext):
     selected_institute = callback.data.split(":")[1]
     
     # Сохраняем институт во временный кэш FSM
     await state.update_data(institute=selected_institute)
+    await state.set_state(Registration.course)
     
     # Меняем сообщение и показываем кнопки выбора курса
     await callback.message.edit_text(
@@ -63,21 +73,22 @@ async def process_institute(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 # Шаг 3: Обработка выбора курса -> Запрос ввода группы
-@router.callback_query(F.data.startswith("course:"))
+@router.callback_query(Registration.course, F.data.startswith("course:"))
 async def process_course(callback: CallbackQuery, state: FSMContext):
     selected_course = callback.data.split(":")[1]
     
     # Сохраняем курс в кэш FSM
     await state.update_data(course=selected_course)
+    await state.set_state(Registration.group)
     
     # Просим пользователя ввести номер группы текстовым сообщением
     await callback.message.edit_text(
-        "✍️ Шаг 3 из 4: Введи номер своей группы цифрами (например, если группа ИУ24-01, то введи 01 или весь номер целиком, если он цифровой):"
+        "✍️ Шаг 3 из 4: Введи полное название группы с сайта СФУ, например КИ26-01. Можно ввести номер 01, если он однозначен для твоего института и курса:"
     )
     await callback.answer()
 
 # Шаг 4: Обработка ввода группы (текст) -> Валидация и переход к подгруппе
-@router.message()
+@router.message(Registration.group)
 async def process_group_input(message: Message, state: FSMContext):
     user_input = (message.text or "").strip()
     
@@ -86,13 +97,14 @@ async def process_group_input(message: Message, state: FSMContext):
         await message.answer("❌ Название или номер группы не может быть пустым. Попробуй еще раз:")
         return
 
-    # Проверяем, состоит ли ввод только из цифр
-    if not user_input.isdigit():
-        await message.answer("❌ Номер группы должен состоять только из цифр. Введи корректный номер:")
+    # Ограничение соответствует длине поля group_name в БД.
+    if len(user_input) > 50 or user_input.startswith("/"):
+        await message.answer("❌ Введи название группы длиной до 50 символов:")
         return
 
     # Сохраняем группу в кэш FSM
     await state.update_data(group_name=user_input)
+    await state.set_state(Registration.subgroup)
     
     # Отправляем клавиатуру выбора подгруппы (Шаг 4)
     await message.answer(
@@ -101,7 +113,7 @@ async def process_group_input(message: Message, state: FSMContext):
     )
 
 # Шаг 5: Финал (Выбор подгруппы) -> Запись в БД и выдача меню расписания
-@router.callback_query(F.data.startswith("subgroup:"))
+@router.callback_query(Registration.subgroup, F.data.in_({"subgroup:1", "subgroup:2", "subgroup:3"}))
 async def finish_registration(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     # Забираем ВСЁ, что накопилось в кэше за предыдущие шаги
     data = await state.get_data()
@@ -132,3 +144,4 @@ async def finish_registration(callback: CallbackQuery, state: FSMContext, sessio
         "✅ Регистрация успешно завершена! Твои данные сохранены.\n\nВыбери, какое расписание тебя интересует:",
         reply_markup=get_main_menu_keyboard()
     )
+    await callback.answer()

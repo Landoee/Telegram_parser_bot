@@ -55,15 +55,17 @@ def get_courses_keyboard():
 
 
 def get_subgroup_keyboard():
-    """Клавиатура выбора подгруппы (1 или 2)"""
+    """Клавиатура выбора подгруппы."""
     builder = InlineKeyboardBuilder()
     builder.button(text="1 подгруппа", callback_data="subgroup:1")
     builder.button(text="2 подгруппа", callback_data="subgroup:2")
-    builder.adjust(2)
+    builder.button(text="3 подгруппа", callback_data="subgroup:3")
+    builder.adjust(3)
     return builder.as_markup()
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
+        [InlineKeyboardButton(text="📚 Расписание", callback_data="schedule:menu")],
         [
             InlineKeyboardButton(text="📅 На сегодня", callback_data="schedule:today"),
             InlineKeyboardButton(text="📅 На завтра", callback_data="schedule:tomorrow")
